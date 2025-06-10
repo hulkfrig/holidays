@@ -262,7 +262,7 @@ else:
         for utc_time, local_list in meeting_suggestions:
             st.markdown(f"**{utc_time}** → " + " | ".join(local_list))
     else:
-        st.warning("No suitable meeting time found between 08:00–18:00 local time for all countries.")
+        st.warning("No suitable meeting time found between 08:00–18:00 local time for all countries. Try deselecting countries")
 
 
 # --- Show country groups at the bottom ---
