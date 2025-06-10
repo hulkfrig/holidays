@@ -11,22 +11,16 @@ from st_aggrid import AgGrid, GridOptionsBuilder
 # --- Load Data ---
 @st.cache_data
 def load_data():
-
     file_path = Path("public_holidays_2025_2026.csv")
-
-   
     df = pd.read_csv(file_path)
 
     df = df.melt(id_vars=['Column1'], var_name='Date', value_name='Holiday')
     df['Holiday'] = df['Holiday'].astype(str)
     df = df[df['Holiday'] != '0']
-
-    # 👇 Force day-first interpretation of dates
     df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce')
     df.dropna(subset=['Date'], inplace=True)
     df.rename(columns={'Column1': 'Country'}, inplace=True)
 
-    # Add breakdowns
     df['Year'] = df['Date'].dt.year
     df['Month'] = df['Date'].dt.strftime('%B')
     df['Month_Num'] = df['Date'].dt.month
@@ -34,13 +28,11 @@ def load_data():
 
     return df
 
-
+# --- Country Groups ---
 steering_group = [
     "Canada", "Denmark", "France", "Germany", "Italy", "Norway", 
     "South Africa", "Spain", "United Kingdom", "United States"
 ]
-
-# --- Define member countries ---
 
 member_countries = [
     "Australia", "Austria", "Belgium", "Canada", "China", "Denmark", "Finland",
@@ -48,40 +40,42 @@ member_countries = [
     "South Africa", "Spain", "Switzerland", "United Kingdom", "United States"
 ]
 
-
 df = load_data()
 st.title("WORK-NET Meeting Planner")
 
- 
 # --- Sidebar Filters ---
 st.sidebar.header("Filters")
 
-# Define all available countries first
+# All available countries
 all_countries = sorted(df['Country'].unique())
 
-# Group filter logic
-filter_option = st.sidebar.radio("Filter by group:", ["All Countries", "Steering Group", "Member Countries"])
-if filter_option == "Steering Group":
+# --- Country selection mode ---
+selection_mode = st.sidebar.radio("Start with:", ["No Countries", "Steering Group", "Member Countries", "All Countries"])
+
+# Base selection based on radio choice
+if selection_mode == "Steering Group":
     base_selection = steering_group
-elif filter_option == "Member Countries":
+elif selection_mode == "Member Countries":
     base_selection = member_countries
+elif selection_mode == "All Countries":
+    base_selection = all_countries
 else:
-    base_selection = all_countries  # Now defined earlier, so no error
+    base_selection = []
 
-# Allow user to add more countries manually
-extra_selection = st.sidebar.multiselect("Add additional countries:", all_countries, default=[])
+# Manual country selection (can add/remove from base)
 
-# Final country list
-selected_countries = sorted(set(base_selection + extra_selection))
 
-# Year/month/search
+# Ensure base_selection only includes valid countries from options
+valid_base_selection = [c for c in base_selection if c in all_countries]
+
+selected_countries = st.sidebar.multiselect("Select countries:", options=all_countries, default=valid_base_selection)
+
+# Year, month, search
 selected_year = st.sidebar.selectbox("Select year:", sorted(df['Year'].unique()))
 month_names = list(calendar.month_name)[1:]
 selected_month_name = st.sidebar.selectbox("Select month:", month_names)
 selected_month = month_names.index(selected_month_name) + 1
 search_term = st.sidebar.text_input("Search holidays (e.g. 'Christmas')", key='holiday_search').lower()
-
-
 
 # --- Filter Data ---
 filtered = df.copy()
@@ -91,11 +85,6 @@ if search_term:
     filtered = filtered[filtered['Holiday'].str.lower().str.contains(search_term)]
 
 filtered = filtered[(filtered['Year'] == selected_year) & (filtered['Month_Num'] == selected_month)]
-
-
-
-
-
 
 # --- Calendar Heatmap ---
 st.markdown("## 🗓️ Calendar View: Days with No Holidays in Any Selected Country")
@@ -136,14 +125,8 @@ if selected_countries:
             week_colors = []
             week_labels = []
 
-    # Color map
-    color_map = {
-        -1: 'lightgray',    # Other month
-         0: 'lightcoral',   # Holiday
-         1: 'lightgreen'    # No holiday
-    }
+    color_map = {-1: 'lightgray', 0: 'lightcoral', 1: 'lightgreen'}
 
-    # Draw calendar
     fig = go.Figure()
     for i, row in enumerate(z_vals):
         for j, val in enumerate(row):
@@ -172,14 +155,6 @@ if selected_countries:
     """)
 else:
     st.info("Select at least one country to see the calendar.")
-    
-    
-    
-    
-    
-
-# --- Table of Holidays ---
-
 
 # --- Table of Holidays ---
 st.markdown("## 🕛 Public Holidays by Country")
@@ -189,7 +164,7 @@ if not filtered.empty:
 
         gb = GridOptionsBuilder.from_dataframe(group[['Date', 'Country', 'Holiday']])
         gb.configure_default_column(wrapText=True, autoHeight=True)
-        gb.configure_column("Holiday", width=300)  # You can increase width if needed
+        gb.configure_column("Holiday", width=300)
         grid_options = gb.build()
 
         AgGrid(group[['Date', 'Country', 'Holiday']].sort_values(by='Date'),
@@ -197,10 +172,6 @@ if not filtered.empty:
                enable_enterprise_modules=False,
                height=300,
                fit_columns_on_grid_load=True)
-        
-        
-        
-        
 
     # --- Download Buttons ---
     excel_buffer = BytesIO()
@@ -222,18 +193,11 @@ if not filtered.empty:
     st.download_button("📄 Download PDF", pdf_buffer, "holidays.pdf", "application/pdf")
 else:
     st.warning("No holidays match your filters.")
-    
-    
-    
 
 # --- Show country groups at the bottom ---
 st.markdown("---")
 st.subheader("Country Groups")
-
 st.markdown("**Steering Group Countries:**")
 st.markdown(", ".join(sorted(steering_group)))
-
 st.markdown("**Member Countries:**")
 st.markdown(", ".join(sorted(member_countries)))
-
-
