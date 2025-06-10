@@ -7,10 +7,13 @@ from io import BytesIO
 from fpdf import FPDF
 from pathlib import Path
 from st_aggrid import AgGrid, GridOptionsBuilder
+import pytz
+from datetime import datetime, timedelta
 
 # --- Load Data ---
 @st.cache_data
 def load_data():
+    # file_path = Path("public_holidays_2025_2026.csv")
     file_path = Path("public_holidays_2025_2026.csv")
     df = pd.read_csv(file_path)
 
@@ -28,6 +31,29 @@ def load_data():
 
     return df
 
+def find_suitable_meeting_times(timezones, date):
+    utc = pytz.utc
+    suitable_times = []
+
+    for hour in range(0, 24):
+        for minute in [0, 30]:
+            utc_time = datetime(date.year, date.month, date.day, hour, minute, tzinfo=utc)
+            local_times = []
+
+            all_in_bounds = True
+            for tz in timezones:
+                local_time = utc_time.astimezone(pytz.timezone(tz))
+                if local_time.hour < 8 or local_time.hour > 18:
+                    all_in_bounds = False
+                local_times.append(f"{tz.split('/')[-1]}: {local_time.strftime('%H:%M')}")
+
+            if all_in_bounds:
+                suitable_times.append((utc_time.strftime('%H:%M UTC'), local_times))
+
+    return suitable_times
+
+
+
 # --- Country Groups ---
 steering_group = [
     "Canada", "Denmark", "France", "Germany", "Italy", "Norway", 
@@ -39,6 +65,32 @@ member_countries = [
     "France", "Germany", "Italy", "Netherlands", "Norway", "Poland",
     "South Africa", "Spain", "Switzerland", "United Kingdom", "United States"
 ]
+
+country_to_timezone = {
+    "United Kingdom": "Europe/London",
+    "United States": "America/New_York",
+    "Canada": "America/Toronto",
+    "Germany": "Europe/Berlin",
+    "France": "Europe/Paris",
+    "Italy": "Europe/Rome",
+    "Spain": "Europe/Madrid",
+    "Norway": "Europe/Oslo",
+    "South Africa": "Africa/Johannesburg",
+    "Australia": "Australia/Sydney",
+    "Austria": "Europe/Vienna",
+    "Belgium": "Europe/Brussels",
+    "China": "Asia/Shanghai",
+    "Denmark": "Europe/Copenhagen",
+    "Finland": "Europe/Helsinki",
+    "Japan": "Asia/Tokyo",
+    "Netherlands": "Europe/Amsterdam",
+    "Poland": "Europe/Warsaw",
+    "Switzerland": "Europe/Zurich",
+    # Add more as needed
+}
+
+
+
 
 df = load_data()
 st.title("WORK-NET Meeting Planner")
@@ -173,6 +225,7 @@ if not filtered.empty:
                height=300,
                fit_columns_on_grid_load=True)
 
+
     # --- Download Buttons ---
     excel_buffer = BytesIO()
     filtered.to_excel(excel_buffer, index=False, sheet_name='Holidays')
@@ -193,6 +246,24 @@ if not filtered.empty:
     st.download_button("📄 Download PDF", pdf_buffer, "holidays.pdf", "application/pdf")
 else:
     st.warning("No holidays match your filters.")
+    
+    # --- Suggested Meeting Times ---
+st.markdown("## 🤝 Suggested Meeting Times (08:00–18:00 local time)")
+
+valid_countries = [c for c in selected_countries if c in country_to_timezone]
+timezones = [country_to_timezone[c] for c in valid_countries]
+
+if not valid_countries:
+    st.info("Please select at least one country with timezone mapping.")
+else:
+    meeting_suggestions = find_suitable_meeting_times(timezones, datetime(selected_year, selected_month, 15))
+
+    if meeting_suggestions:
+        for utc_time, local_list in meeting_suggestions:
+            st.markdown(f"**{utc_time}** → " + " | ".join(local_list))
+    else:
+        st.warning("No suitable meeting time found between 08:00–18:00 local time for all countries.")
+
 
 # --- Show country groups at the bottom ---
 st.markdown("---")
