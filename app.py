@@ -299,6 +299,6 @@ st.markdown("**Member Countries:**")
 st.markdown(", ".join(sorted(member_countries)))
 
 # --- Logo ---
-st.image("Work-net-logo-final.jpg", use_column_width="auto")
+##st.image("Work-net-logo-final.jpg", use_column_width="auto")
 
 st.markdown('<p style="text-align: center; font-size: small; color: gray;">Rafferty, AL (2025) Open Access (GitHub).</p>', unsafe_allow_html=True)
