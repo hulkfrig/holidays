@@ -1,3 +1,8 @@
+#label Column1
+#correct slovenia letters and space
+#  \u0161   š  '  <space>
+##  cd "C:\Eagle_2\python\public_holidays"
+
 import streamlit as st
 import pandas as pd
 import calendar
@@ -10,10 +15,14 @@ from st_aggrid import AgGrid, GridOptionsBuilder
 import pytz
 from datetime import datetime, timedelta
 
+
 # --- Load Data ---
 @st.cache_data
 def load_data():
+
     # file_path = Path("public_holidays_2025_2026.csv")
+   
+    
     file_path = Path("public_holidays_2025_2026.csv")
     df = pd.read_csv(file_path)
 
@@ -67,29 +76,45 @@ member_countries = [
 ]
 
 country_to_timezone = {
-    "United Kingdom": "Europe/London",
-    "United States": "America/New_York",
-    "Canada": "America/Toronto",
-    "Germany": "Europe/Berlin",
-    "France": "Europe/Paris",
-    "Italy": "Europe/Rome",
-    "Spain": "Europe/Madrid",
-    "Norway": "Europe/Oslo",
-    "South Africa": "Africa/Johannesburg",
     "Australia": "Australia/Sydney",
     "Austria": "Europe/Vienna",
     "Belgium": "Europe/Brussels",
+    "Bulgaria": "Europe/Sofia",
+    "Canada": "America/Toronto",
     "China": "Asia/Shanghai",
+    "Croatia": "Europe/Zagreb",
+    "Cyprus": "Asia/Nicosia",
+    "Czechia": "Europe/Prague",
     "Denmark": "Europe/Copenhagen",
+    "Estonia": "Europe/Tallinn",
     "Finland": "Europe/Helsinki",
-    "Japan": "Asia/Tokyo",
+    "France": "Europe/Paris",
+    "Germany": "Europe/Berlin",
+    "Hungary": "Europe/Budapest",
+    "Ireland": "Europe/Dublin",
+    "Italy": "Europe/Rome",
+    "Latvia": "Europe/Riga",
+    "Lithuania": "Europe/Vilnius",
+    "Luxembourg": "Europe/Luxembourg",
+    "Malta": "Europe/Malta",
     "Netherlands": "Europe/Amsterdam",
+    "Norway": "Europe/Oslo",
     "Poland": "Europe/Warsaw",
+    "Portugal": "Europe/Lisbon", 
+    "Romania": "Europe/Bucharest",
+    "Slovakia": "Europe/Bratislava",
+    "Slovenia": "Europe/Ljubljana",
+    "South Africa": "Africa/Johannesburg",
+    "South Korea": "Asia/Seoul",
+    "Spain": "Europe/Madrid",
     "Switzerland": "Europe/Zurich",
-    # Add more as needed
+    "United Kingdom": "Europe/London",
+    "United States": "America/New_York"
+    #"Iceland" : "Atlantic/Reykjavik"
 }
 
-
+    
+    # Add more as needed
 
 
 df = load_data()
@@ -248,7 +273,7 @@ else:
     st.warning("No holidays match your filters.")
     
     # --- Suggested Meeting Times ---
-st.markdown("## 🤝 Suggested Meeting Times (08:00–18:00 local time)")
+st.markdown("## 🤝 Suggested Meeting Times (08:00–18:00 local time). Consider daylight adjust?")
 
 valid_countries = [c for c in selected_countries if c in country_to_timezone]
 timezones = [country_to_timezone[c] for c in valid_countries]
@@ -262,7 +287,7 @@ else:
         for utc_time, local_list in meeting_suggestions:
             st.markdown(f"**{utc_time}** → " + " | ".join(local_list))
     else:
-        st.warning("No suitable meeting time found between 08:00–18:00 local time for all countries. Try deselecting countries?")
+        st.warning("No suitable meeting time found between 08:00–18:00 local time for all countries. Try deselecting countries")
 
 
 # --- Show country groups at the bottom ---
@@ -272,3 +297,8 @@ st.markdown("**Steering Group Countries:**")
 st.markdown(", ".join(sorted(steering_group)))
 st.markdown("**Member Countries:**")
 st.markdown(", ".join(sorted(member_countries)))
+
+# --- Logo ---
+st.image("Work-net-logo-final.jpg", use_column_width="auto")
+
+st.markdown('<p style="text-align: center; font-size: small; color: gray;">Rafferty, AL (2025) Open Access (GitHub).</p>', unsafe_allow_html=True)
