@@ -273,7 +273,7 @@ else:
     st.warning("No holidays match your filters.")
     
     # --- Suggested Meeting Times ---
-st.markdown("## 🤝 Suggested Meeting Times (08:00–18:00 local time). Consider daylight adjust?")
+st.markdown("## 🤝 Suggested Meeting Times (08:00–18:00 local time)")
 
 valid_countries = [c for c in selected_countries if c in country_to_timezone]
 timezones = [country_to_timezone[c] for c in valid_countries]
